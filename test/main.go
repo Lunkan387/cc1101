@@ -41,12 +41,12 @@ func main() {
 	time.Sleep(1 * time.Second)
 	var valeurexa byte = cc1101.CC1101_ADDR
 
-	// data, err := cc.ReadBurstRegister(valeurexa, 10)
-	// if err != nil {
-	// 	fmt.Println("Erreur ReadBurstRegister")
-	// }
-	// fmt.Printf("Data sur %v : %v\n", valeurexa, data)
-	// cc.WriteRegister(cc1101.CC1101_ADDR, 0x10)
+	data, err := cc.ReadBurstRegister(valeurexa, 10)
+	if err != nil {
+		fmt.Println("Erreur ReadBurstRegister")
+	}
+	fmt.Printf("Data sur %v : %v\n", valeurexa, data)
+	cc.WriteBurstRegister(valeurexa, []byte{0x10, 0x2})
 
 	for {
 		data, err := cc.ReadBurstRegister(valeurexa, 10)

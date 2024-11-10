@@ -99,7 +99,7 @@ func (d *Device) ReadBurstRegister(addr byte, length int) ([]byte, error) {
 	return data, nil
 }
 
-func (d *Device) WriteRegister(addr, value byte) error {
+func (d *Device) WriteSingleRegister(addr, value byte) error {
 	d.EnableCS()
 	for d.miso.Get() != false {
 		time.Sleep(1 * time.Microsecond)
@@ -111,6 +111,26 @@ func (d *Device) WriteRegister(addr, value byte) error {
 	if err := d.bus.Tx([]byte{value}, nil); err != nil {
 		d.DisableCS()
 		return err
+	}
+	d.DisableCS()
+	return nil
+}
+
+func (d *Device) WriteBurstRegister(addr byte, data []byte) error {
+	temp := addr | CC1101_WRITEBURST
+	d.EnableCS()
+	for d.miso.Get() != false {
+		time.Sleep(1 * time.Microsecond)
+	}
+	if err := d.bus.Tx([]byte{temp}, nil); err != nil {
+		d.DisableCS()
+		return err
+	}
+	for _, byteData := range data {
+		if err := d.bus.Tx([]byte{byteData}, nil); err != nil {
+			d.DisableCS()
+			return err
+		}
 	}
 	d.DisableCS()
 	return nil
