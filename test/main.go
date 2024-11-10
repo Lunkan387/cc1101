@@ -36,8 +36,17 @@ func main() {
 	}
 	cc := cc1101.New(spi, SPI2_CS_PIN.Set, SPI2_MISO_PIN)
 
+	if err := cc.Reset(); err != nil {
+		panic(err)
+	}
+	var valeurexa byte = 0x0E
 	for {
-		fmt.Println(cc.ReadSingleRegister(0x0E))
+		data, err := cc.ReadBurstRegister(valeurexa, 10)
+		if err != nil {
+			fmt.Println("Erreur ReadBurstRegister")
+		}
+		fmt.Println(data)
+		fmt.Println(cc.ReadSingleRegister(valeurexa))
 		time.Sleep(1 * time.Second)
 	}
 
