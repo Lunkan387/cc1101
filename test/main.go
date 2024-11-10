@@ -35,19 +35,25 @@ func main() {
 		panic(err)
 	}
 	cc := cc1101.New(spi, SPI2_CS_PIN.Set, SPI2_MISO_PIN)
-
 	if err := cc.Reset(); err != nil {
 		panic(err)
 	}
-	var valeurexa byte = 0x0E
+	time.Sleep(1 * time.Second)
+	var valeurexa byte = cc1101.CC1101_ADDR
+
+	// data, err := cc.ReadBurstRegister(valeurexa, 10)
+	// if err != nil {
+	// 	fmt.Println("Erreur ReadBurstRegister")
+	// }
+	// fmt.Printf("Data sur %v : %v\n", valeurexa, data)
+	// cc.WriteRegister(cc1101.CC1101_ADDR, 0x10)
+
 	for {
 		data, err := cc.ReadBurstRegister(valeurexa, 10)
 		if err != nil {
 			fmt.Println("Erreur ReadBurstRegister")
 		}
-		fmt.Println(data)
-		fmt.Println(cc.ReadSingleRegister(valeurexa))
+		fmt.Printf("Data sur %v : %v\n", valeurexa, data)
 		time.Sleep(1 * time.Second)
 	}
-
 }
