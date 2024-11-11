@@ -2,6 +2,7 @@ package cc1101
 
 import (
 	"errors"
+	"fmt"
 	"machine"
 	"time"
 )
@@ -21,8 +22,9 @@ var (
 	// | 7th bit | 6-4 bits | 3rd bit | 2-0 bits |
 	// Read page 77 https://www.ti.com/lit/ds/symlink/cc1101.pdf
 	//
-	m2DCOFF, m2SYNCM, m2MANCH, m2MODFM byte
-	frend0                             byte
+	m2DCOFF, m2MANCH, m2MODFM byte
+	frend0                    byte
+	m2SYNCM                   byte = 0x02
 )
 
 type SPI interface {
@@ -176,6 +178,16 @@ func (d *Device) setCCMode(state bool) {
 	}
 }
 
+// The mask ensures that only the relevant bits are modified in the register
+// while leaving the others unchanged.
+// The following mask operations isolate specific bits for each field:
+// - (m2DCOFF & 0x80) keeps only bit 7 for DCOFF.
+// - (m2MODFM & 0x70) keeps bits 6-4 for MODFM (modulation type).
+// - (m2MANCH & 0x08) keeps bit 3 for Manchester encoding.
+// - (m2SYNCM & 0x07) keeps bits 2-0 for SYNC mode.
+//
+// These are combined using the OR operator (|) to form the final register value.
+
 func (d *Device) SetModulation(modulation string) error {
 	switch modulation {
 	case "2FSK":
@@ -196,8 +208,81 @@ func (d *Device) SetModulation(modulation string) error {
 	default:
 		return errors.New("Unsupported modulation type, please use 2FSK,GFSK,OOK,4FSK,MSK ")
 	}
-	d.WriteSingleRegister(CC1101_MDMCFG2, m2DCOFF+m2MODFM+m2MANCH+m2SYNCM)
+	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
+	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	if err != nil {
+		return fmt.Errorf("Error writing in the register : %v", err)
+	}
 	d.WriteSingleRegister(CC1101_FREND0, frend0)
 
+	return nil
+}
+
+func (d *Device) SetSYNC_MODE(choice int) error {
+	switch choice {
+	case 0:
+		m2SYNCM = 0x00 // Aucune synchronisation (pas de préambule/sync)
+	case 1:
+		m2SYNCM = 0x01 // 15/16 bits du mot de synchronisation détectés
+	case 2:
+		m2SYNCM = 0x02 // 16/16 bits du mot de synchronisation détectés
+	case 3:
+		m2SYNCM = 0x03 // 30/32 bits du mot de synchronisation détectés
+	case 4:
+		m2SYNCM = 0x04 // Aucune synchronisation avec détection du seuil de porteuse
+	case 5:
+		m2SYNCM = 0x05 // 15/16 bits du mot de synchronisation + détection du seuil de porteuse
+	case 6:
+		m2SYNCM = 0x06 // 16/16 bits du mot de synchronisation + détection du seuil de porteuse
+	case 7:
+		m2SYNCM = 0x07 // 30/32 bits du mot de synchronisation + détection du seuil de porteuse
+	default:
+		return fmt.Errorf("invalid SYNC_MODE choice: %d", choice)
+	}
+	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
+	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	if err != nil {
+		return fmt.Errorf("Error writing in the register : %v", err)
+	}
+	return nil
+}
+
+func (d *Device) EnableManchester() error {
+	m2MANCH = 0x08
+	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
+	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	if err != nil {
+		return fmt.Errorf("Error writing in the register : %v", err)
+	}
+	return nil
+}
+
+func (d *Device) DisableManchester() error {
+	m2MANCH = 0x00
+	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
+	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	if err != nil {
+		return fmt.Errorf("Error writing in the register : %v", err)
+	}
+	return nil
+}
+
+func (d *Device) EnableDCFilter() error {
+	m2DCOFF = 0x80
+	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
+	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	if err != nil {
+		return fmt.Errorf("Error writing in the register : %v", err)
+	}
+	return nil
+}
+
+func (d *Device) DisableDCFilter() error {
+	m2DCOFF = 0x00
+	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
+	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	if err != nil {
+		return fmt.Errorf("Error writing in the register : %v", err)
+	}
 	return nil
 }

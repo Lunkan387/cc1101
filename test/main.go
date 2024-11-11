@@ -40,15 +40,30 @@ func main() {
 	}
 	time.Sleep(1 * time.Second)
 
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
 	cc.SetModulation("OOK")
-	for {
-		data, err := cc.ReadSingleRegister(0x12)
-		if err != nil {
-			fmt.Println("Error while reading 0x12")
-		} else {
-			fmt.Println(data)
-		}
-		time.Sleep(1 * time.Second)
-	}
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.EnableManchester()
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.DisableManchester()
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.EnableDCFilter()
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.DisableDCFilter()
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.SetModulation("2FSK")
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.SetSYNC_MODE(2)
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
+
+	cc.SetSYNC_MODE(0)
+	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
 
 }
