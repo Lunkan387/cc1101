@@ -1,6 +1,7 @@
 package cc1101
 
 import (
+	"errors"
 	"machine"
 	"time"
 )
@@ -14,6 +15,14 @@ const (
 var (
 	StateCCMode bool
 	m4RxBw      byte
+
+	// Config for 0x12: MDMCFG2
+	// | DCOFF   | MODFM    | MANCH   | SYNCM    |
+	// | 7th bit | 6-4 bits | 3rd bit | 2-0 bits |
+	// Read page 77 https://www.ti.com/lit/ds/symlink/cc1101.pdf
+	//
+	m2DCOFF, m2SYNCM, m2MANCH, m2MODFM byte
+	frend0                             byte
 )
 
 type SPI interface {
@@ -165,4 +174,30 @@ func (d *Device) setCCMode(state bool) {
 		d.WriteSingleRegister(CC1101_MDMCFG3, 0x93)
 		d.WriteSingleRegister(CC1101_MDMCFG4, 7+m4RxBw)
 	}
+}
+
+func (d *Device) SetModulation(modulation string) error {
+	switch modulation {
+	case "2FSK":
+		m2MODFM = 0x00
+		frend0 = 0x10
+	case "GFSK":
+		m2MODFM = 0x10
+		frend0 = 0x10
+	case "OOK":
+		m2MODFM = 0x30
+		frend0 = 0x11
+	case "4FSK":
+		m2MODFM = 0x40
+		frend0 = 0x10
+	case "MSK":
+		m2MODFM = 0x70
+		frend0 = 0x10
+	default:
+		return errors.New("Unsupported modulation type, please use 2FSK,GFSK,OOK,4FSK,MSK ")
+	}
+	d.WriteSingleRegister(CC1101_MDMCFG2, m2DCOFF+m2MODFM+m2MANCH+m2SYNCM)
+	d.WriteSingleRegister(CC1101_FREND0, frend0)
+
+	return nil
 }
