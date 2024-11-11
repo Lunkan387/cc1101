@@ -39,31 +39,11 @@ func main() {
 		panic(err)
 	}
 	time.Sleep(1 * time.Second)
-
 	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
 
-	cc.SetModulation("OOK")
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.EnableManchester()
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.DisableManchester()
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.EnableDCFilter()
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.DisableDCFilter()
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.SetModulation("2FSK")
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.SetSYNC_MODE(2)
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
-	cc.SetSYNC_MODE(0)
-	fmt.Println(cc.ReadSingleRegister(cc1101.CC1101_MDMCFG2))
-
+	cc.SetFrequency(433.92)
+	for {
+		fmt.Println(cc.ReadBurstRegister(cc1101.CC1101_FREQ2, 3))
+		time.Sleep(1 * time.Second)
+	}
 }

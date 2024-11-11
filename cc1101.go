@@ -25,6 +25,10 @@ var (
 	m2DCOFF, m2MANCH, m2MODFM byte
 	frend0                    byte
 	m2SYNCM                   byte = 0x02
+
+	// Set Frequency vars
+	freq0, freq1, freq2 byte
+	mhz                 float32
 )
 
 type SPI interface {
@@ -125,6 +129,19 @@ func (d *Device) WriteSingleRegister(addr, value byte) error {
 		return err
 	}
 	if err := d.bus.Tx([]byte{value}, nil); err != nil {
+		d.DisableCS()
+		return err
+	}
+	d.DisableCS()
+	return nil
+}
+
+func (d *Device) SpiSprobe(strobe byte) error {
+	d.EnableCS()
+	for d.miso.Get() != false {
+		time.Sleep(1 * time.Microsecond)
+	}
+	if err := d.bus.Tx([]byte{strobe}, nil); err != nil {
 		d.DisableCS()
 		return err
 	}
@@ -284,5 +301,37 @@ func (d *Device) DisableDCFilter() error {
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
+	return nil
+}
+
+// Example : 433.92 mhz
+// [16 176 113]
+// freq2 = 16  | 0.1015625
+// freq1 = 176 | 0.00039675
+// freq0 = 113 | 0.00039675
+// Calcul = 16 * 26 + 176 * 0.1015625  + 113 * 0.00039675 = 433.91983275
+
+func (d *Device) SetFrequency(frequency float32) error {
+	// Convertir la fréquence en valeurs pour les registres FREQ2, FREQ1 et FREQ0
+	freq := uint32((frequency * 1_000_000) / 26_000_000 * (1 << 16))
+
+	freq2 := byte((freq >> 16) & 0xFF)
+	freq1 := byte((freq >> 8) & 0xFF)
+	freq0 := byte(freq & 0xFF)
+
+	// Écrire dans les registres du CC1101
+	err := d.WriteSingleRegister(CC1101_FREQ2, freq2)
+	if err != nil {
+		return err
+	}
+	err = d.WriteSingleRegister(CC1101_FREQ1, freq1)
+	if err != nil {
+		return err
+	}
+	err = d.WriteSingleRegister(CC1101_FREQ0, freq0)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
