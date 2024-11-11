@@ -39,21 +39,29 @@ func main() {
 		panic(err)
 	}
 	time.Sleep(1 * time.Second)
-	var valeurexa byte = cc1101.CC1101_ADDR
-
-	data, err := cc.ReadBurstRegister(valeurexa, 10)
-	if err != nil {
-		fmt.Println("Erreur ReadBurstRegister")
-	}
-	fmt.Printf("Data sur %v : %v\n", valeurexa, data)
-	cc.WriteBurstRegister(valeurexa, []byte{0x10, 0x2})
-
+	// var valeurexa byte = cc1101.CC1101_ADDR
 	for {
-		data, err := cc.ReadBurstRegister(valeurexa, 10)
-		if err != nil {
-			fmt.Println("Erreur ReadBurstRegister")
+		if cc.IsConnected() == true {
+			fmt.Println("Connected")
+		} else {
+			fmt.Println("No device found")
 		}
-		fmt.Printf("Data sur %v : %v\n", valeurexa, data)
 		time.Sleep(1 * time.Second)
 	}
+
+	// 	data, err := cc.ReadBurstRegister(valeurexa, 10)
+	// 	if err != nil {
+	// 		fmt.Println("Erreur ReadBurstRegister")
+	// 	}
+	// 	fmt.Printf("Data sur %v : %v\n", valeurexa, data)
+	// 	cc.WriteBurstRegister(valeurexa, []byte{0x10, 0x2})
+
+	//	for {
+	//		data, err := cc.ReadBurstRegister(valeurexa, 10)
+	//		if err != nil {
+	//			fmt.Println("Erreur ReadBurstRegister")
+	//		}
+	//		fmt.Printf("Data sur %v : %v\n", valeurexa, data)
+	//		time.Sleep(1 * time.Second)
+	//	}
 }

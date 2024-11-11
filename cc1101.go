@@ -11,6 +11,11 @@ const (
 	CC1101_WRITEBURST = 0x40
 )
 
+var (
+	StateCCMode bool
+	m4RxBw      byte
+)
+
 type SPI interface {
 	Tx(writeBuffer, readBuffer []byte) error
 }
@@ -134,4 +139,30 @@ func (d *Device) WriteBurstRegister(addr byte, data []byte) error {
 	}
 	d.DisableCS()
 	return nil
+}
+
+func (d *Device) IsConnected() bool {
+	d.EnableCS()
+	state, _ := d.ReadSingleRegister(0x31)
+	if state > 0 {
+		return true
+	}
+	return false
+}
+
+func (d *Device) setCCMode(state bool) {
+	StateCCMode = state
+	if StateCCMode == true {
+		d.WriteSingleRegister(CC1101_IOCFG2, 0x0b)
+		d.WriteSingleRegister(CC1101_IOCFG0, 0x06)
+		d.WriteSingleRegister(CC1101_PKTCTRL0, 0x05)
+		d.WriteSingleRegister(CC1101_MDMCFG3, 0xF8)
+		d.WriteSingleRegister(CC1101_MDMCFG4, 11+m4RxBw)
+	} else {
+		d.WriteSingleRegister(CC1101_IOCFG2, 0x0D)
+		d.WriteSingleRegister(CC1101_IOCFG0, 0x0D)
+		d.WriteSingleRegister(CC1101_PKTCTRL0, 0x32)
+		d.WriteSingleRegister(CC1101_MDMCFG3, 0x93)
+		d.WriteSingleRegister(CC1101_MDMCFG4, 7+m4RxBw)
+	}
 }
