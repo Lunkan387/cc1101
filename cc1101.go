@@ -29,6 +29,7 @@ var (
 	// Set Frequency vars
 	freq0, freq1, freq2 byte
 	mhz                 float32
+	marcstate           byte
 )
 
 type SPI interface {
@@ -59,22 +60,17 @@ func New(bus SPI, cs PinOutput, miso machine.Pin) *Device {
 }
 
 func (d *Device) Reset() error {
-	d.DisableCS()
-	time.Sleep(1 * time.Microsecond)
 	d.EnableCS()
-	time.Sleep(1 * time.Microsecond)
-	for d.miso.Get() != false {
-		time.Sleep(1 * time.Microsecond)
-	}
-	err := d.bus.Tx([]byte{CC1101_SRES}, nil)
+	time.Sleep(10 * time.Microsecond)
+	d.DisableCS()
+	time.Sleep(40 * time.Microsecond)
+
+	err := d.SpiStrobe(SRES)
 	if err != nil {
-		d.DisableCS()
 		return err
 	}
-	for d.miso.Get() != false {
-		time.Sleep(1 * time.Microsecond)
-	}
-	d.DisableCS()
+	time.Sleep(1 * time.Millisecond)
+
 	return nil
 }
 
@@ -136,7 +132,7 @@ func (d *Device) WriteSingleRegister(addr, value byte) error {
 	return nil
 }
 
-func (d *Device) SpiSprobe(strobe byte) error {
+func (d *Device) SpiStrobe(strobe byte) error {
 	d.EnableCS()
 	for d.miso.Get() != false {
 		time.Sleep(1 * time.Microsecond)
@@ -181,17 +177,17 @@ func (d *Device) IsConnected() bool {
 func (d *Device) setCCMode(state bool) {
 	StateCCMode = state
 	if StateCCMode == true {
-		d.WriteSingleRegister(CC1101_IOCFG2, 0x0b)
-		d.WriteSingleRegister(CC1101_IOCFG0, 0x06)
-		d.WriteSingleRegister(CC1101_PKTCTRL0, 0x05)
-		d.WriteSingleRegister(CC1101_MDMCFG3, 0xF8)
-		d.WriteSingleRegister(CC1101_MDMCFG4, 11+m4RxBw)
+		d.WriteSingleRegister(IOCFG2, 0x0b)
+		d.WriteSingleRegister(IOCFG0, 0x06)
+		d.WriteSingleRegister(PKTCTRL0, 0x05)
+		d.WriteSingleRegister(MDMCFG3, 0xF8)
+		d.WriteSingleRegister(MDMCFG4, 11+m4RxBw)
 	} else {
-		d.WriteSingleRegister(CC1101_IOCFG2, 0x0D)
-		d.WriteSingleRegister(CC1101_IOCFG0, 0x0D)
-		d.WriteSingleRegister(CC1101_PKTCTRL0, 0x32)
-		d.WriteSingleRegister(CC1101_MDMCFG3, 0x93)
-		d.WriteSingleRegister(CC1101_MDMCFG4, 7+m4RxBw)
+		d.WriteSingleRegister(IOCFG2, 0x0D)
+		d.WriteSingleRegister(IOCFG0, 0x0D)
+		d.WriteSingleRegister(PKTCTRL0, 0x32)
+		d.WriteSingleRegister(MDMCFG3, 0x93)
+		d.WriteSingleRegister(MDMCFG4, 7+m4RxBw)
 	}
 }
 
@@ -226,11 +222,11 @@ func (d *Device) SetModulation(modulation string) error {
 		return errors.New("Unsupported modulation type, please use 2FSK,GFSK,OOK,4FSK,MSK ")
 	}
 	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
-	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	err := d.WriteSingleRegister(MDMCFG2, registerValue)
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
-	d.WriteSingleRegister(CC1101_FREND0, frend0)
+	d.WriteSingleRegister(FREND0, frend0)
 
 	return nil
 }
@@ -257,7 +253,7 @@ func (d *Device) SetSYNC_MODE(choice int) error {
 		return fmt.Errorf("invalid SYNC_MODE choice: %d", choice)
 	}
 	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
-	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	err := d.WriteSingleRegister(MDMCFG2, registerValue)
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
@@ -267,7 +263,7 @@ func (d *Device) SetSYNC_MODE(choice int) error {
 func (d *Device) EnableManchester() error {
 	m2MANCH = 0x08
 	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
-	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	err := d.WriteSingleRegister(MDMCFG2, registerValue)
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
@@ -277,7 +273,7 @@ func (d *Device) EnableManchester() error {
 func (d *Device) DisableManchester() error {
 	m2MANCH = 0x00
 	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
-	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	err := d.WriteSingleRegister(MDMCFG2, registerValue)
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
@@ -287,7 +283,7 @@ func (d *Device) DisableManchester() error {
 func (d *Device) EnableDCFilter() error {
 	m2DCOFF = 0x80
 	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
-	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	err := d.WriteSingleRegister(MDMCFG2, registerValue)
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
@@ -297,7 +293,7 @@ func (d *Device) EnableDCFilter() error {
 func (d *Device) DisableDCFilter() error {
 	m2DCOFF = 0x00
 	registerValue := (m2DCOFF & 0x80) | (m2MODFM & 0x70) | (m2MANCH & 0x08) | (m2SYNCM & 0x07)
-	err := d.WriteSingleRegister(CC1101_MDMCFG2, registerValue)
+	err := d.WriteSingleRegister(MDMCFG2, registerValue)
 	if err != nil {
 		return fmt.Errorf("Error writing in the register : %v", err)
 	}
@@ -306,8 +302,8 @@ func (d *Device) DisableDCFilter() error {
 
 // Example : 433.92 mhz
 // [16 176 113]
-// freq2 = 16  | 0.1015625
-// freq1 = 176 | 0.00039675
+// freq2 = 16  | 26
+// freq1 = 176 | 0.1015625
 // freq0 = 113 | 0.00039675
 // Calcul = 16 * 26 + 176 * 0.1015625  + 113 * 0.00039675 = 433.91983275
 
@@ -320,18 +316,67 @@ func (d *Device) SetFrequency(frequency float32) error {
 	freq0 := byte(freq & 0xFF)
 
 	// Écrire dans les registres du CC1101
-	err := d.WriteSingleRegister(CC1101_FREQ2, freq2)
+	err := d.WriteSingleRegister(FREQ2, freq2)
 	if err != nil {
 		return err
 	}
-	err = d.WriteSingleRegister(CC1101_FREQ1, freq1)
+	err = d.WriteSingleRegister(FREQ1, freq1)
 	if err != nil {
 		return err
 	}
-	err = d.WriteSingleRegister(CC1101_FREQ0, freq0)
+	err = d.WriteSingleRegister(FREQ0, freq0)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// Marcstate register addr : 0xF5
+//	Value for each states in marcstate :
+//	0x00	SLEEP
+//	0x01	IDLE
+//	0x02	XOFF
+//	0x03	VCOON_MC
+//	0x04	REGON_MC
+//	0x05	MANCAL
+//	0x06	VCOON
+//	0x07	REGON
+//	0x08	STARTCAL
+//	0x09	BWBOOST
+//	0x0A	FS_LOCK
+//	0x0B	IFADCON
+//	0x0C	ENDCAL
+//	0x0D	RX
+//	0x0E	RX_END
+//	0x0F	RX_RST
+//	0x10	TXRX_SWITCH
+//	0x11	RXFIFO_OVERFLOW
+//	0x12	FSTXON
+//	0x13	TX
+//	0x14	TX_END
+//	0x15	RXTX_SWITCH
+//	0x16	TXFIFO_UNDERFLOW
+//
+//	Strobe commands :
+//  SRES    = 0x30 // Reset chip
+//  SFSTXON = 0x31 // Enable/calibrate freq synthesizer
+//  SXOFF   = 0x32 // Turn off crystal oscillator.
+//  SCAL    = 0x33 // Calibrate freq synthesizer & disable
+//  SRX     = 0x34 // Enable RX.
+//  STX     = 0x35 // Enable TX.
+//  SIDLE   = 0x36 // Exit RX / TX
+//  SAFC    = 0x37 // AFC adjustment of freq synthesizer
+//  SWOR    = 0x38 // Start automatic RX polling sequence
+//  SPWD    = 0x39 // Enter pwr down mode when CSn goes hi
+//  SFRX    = 0x3A // Flush the RX FIFO buffer.
+//  SFTX    = 0x3B // Flush the TX FIFO buffer.
+//  SWORRST = 0x3C // Reset real time clock.
+//  SNOP    = 0x3D // No operation.
+
+func (d *Device) SetRx() {
+	d.SpiStrobe(0x35)
+	for marcstate != 0x13 {
+		marcstate, _ = d.ReadSingleRegister(MARCSTATE)
+	}
 }
