@@ -375,8 +375,15 @@ func (d *Device) SetFrequency(frequency float32) error {
 //  SNOP    = 0x3D // No operation.
 
 func (d *Device) SetRx() {
-	d.SpiStrobe(0x35)
-	for marcstate != 0x13 {
+	d.SpiStrobe(SRX)
+	for marcstate != MARCSTATE_RX {
+		marcstate, _ = d.ReadSingleRegister(MARCSTATE)
+	}
+}
+
+func (d *Device) SetTx() {
+	d.SpiStrobe(STX)
+	for marcstate != MARCSTATE_TX {
 		marcstate, _ = d.ReadSingleRegister(MARCSTATE)
 	}
 }
