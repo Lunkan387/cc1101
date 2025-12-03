@@ -1,28 +1,10 @@
 package cc1101
 
-// =====================[ setting EEPROM addresses]=============================
-const (
-	EEPROM_ADDRESS_CC1100_FREQUENCY = 0x1F4 // ISM band
-	EEPROM_ADDRESS_CC1100_MODE      = 0x1F5 // modulation mode
-	EEPROM_ADDRESS_CC1100_MY_ADDR   = 0x1F6 // receiver address
-	EEPROM_ADDRESS_CC1100_CHANNEL   = 0x1F7 // channel number
-)
-
-// **************************** pins ******************************************//
-const (
-	SCK_PIN  = 13
-	MISO_PIN = 12
-	MOSI_PIN = 11
-	SS_PIN   = 10
-	GDO2     = 3 // 2 main, 5 remote, 3 M16
-	GDO0     = 99
-)
-
 /*----------------------[CC1100 - misc]---------------------------------------*/
 const (
 	CRYSTAL_FREQUENCY       = 26000000
 	CFG_REGISTER            = 0x2F // 47 registers
-	FIFOBUFFER              = 0x42 // size of Fifo Buffer
+	FIFOBUFFER              = 0x40 // size of Fifo Buffer
 	RSSI_OFFSET_868MHZ      = 0x4E // dec = 74
 	TX_RETRIES_MAX          = 0x05 // tx_retries_max
 	ACK_TIMEOUT             = 200  // ACK timeout in ms
@@ -57,6 +39,7 @@ const (
 
 /*----------------------[CC1100 - config register]----------------------------*/
 const (
+	PATABLE  = 0x3E
 	IOCFG2   = 0x00 // GDO2 output pin configuration
 	IOCFG1   = 0x01 // GDO1 output pin configuration
 	IOCFG0   = 0x02 // GDO0 output pin configuration
@@ -167,3 +150,13 @@ const (
 	MARCSTATE_RXTX_SWITCH  = 0x15
 	MARCSTATE_TX_UNDERFLOW = 0x16
 )
+
+const (
+    Power_10dBm  byte = 0xC0 // Max
+    Power_7dBm   byte = 0xC8
+    Power_5dBm   byte = 0x84
+    Power_0dBm   byte = 0x60 // Standard
+    Power_Neg10dBm byte = 0x34
+    Power_Neg30dBm byte = 0x12 // Min
+)
+
