@@ -22,7 +22,7 @@ func main() {
 	// Configuration SPI - AUGMENTE LA VITESSE !
 	spi := machine.SPI2
 	err := spi.Configure(machine.SPIConfig{
-		Frequency: 4_000_000, // 4 MHz au lieu de 500 kHz !
+		Frequency: 4_000_000, 
 		SCK:       machine.Pin(SCK),
 		SDO:       machine.Pin(MOSI),
 		SDI:       machine.Pin(MISO),
@@ -88,15 +88,12 @@ func main() {
 			state, _ := cc.ReadSingleRegister(cc1101.MARCSTATE)
 			marcState := state & cc1101.MARCSTATE_MASK
 			
-			// Affichage de l'état
 			stateStr := getStateString(marcState)
 			fmt.Printf("État: %s (0x%02X) | ", stateStr, marcState)
 			
-			// Vérification TXBYTES
 			txBytes, _ := cc.ReadSingleRegister(cc1101.TXBYTES)
 			fmt.Printf("TXBYTES: %d\n", txBytes&0x7F)
 
-			// Si on n'est plus en TX, on relance
 			if marcState != cc1101.MARCSTATE_TX {
 				fmt.Println("⚠️  Pas en TX, relance...")
 				cc.SpiStrobe(cc1101.SFTX) // Flush TX FIFO
